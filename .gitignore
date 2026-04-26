@@ -6,3 +6,4 @@ data/*.db
 .streamlit/
 data/demo_wardrobe/
 data/uploads/
+data/readme_demo.db

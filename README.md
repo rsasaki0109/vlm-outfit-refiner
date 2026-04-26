@@ -106,7 +106,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest
 
 ## ローカルUI（Streamlit）
 
-![Streamlit UI preview](assets/ui-preview.png)
+![Streamlit UI (real, Edit page)](assets/ui-real-edit.png)
 
 ```bash
 python3 -m venv .venv

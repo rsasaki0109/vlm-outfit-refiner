@@ -42,12 +42,44 @@ def main() -> None:
     st.set_page_config(page_title="vlm-outfit-refiner", layout="wide")
     st.title("vlm-outfit-refiner (local MVP)")
 
+    qp = st.query_params
+    qp_page = str(qp.get("page", "")).strip().lower()
+    qp_id_raw = str(qp.get("id", "")).strip()
+    qp_db = str(qp.get("db", "")).strip()
+    qp_ollama = str(qp.get("ollama", "")).strip()
+    qp_model = str(qp.get("model", "")).strip()
+
+    page_map = {
+        "add": "Add",
+        "list": "List",
+        "edit": "Edit",
+        "reclassify": "Reclassify",
+        "recommend": "Recommend",
+    }
+    initial_page = page_map.get(qp_page, "Add")
+    initial_id = 1
+    try:
+        if qp_id_raw:
+            initial_id = max(1, int(qp_id_raw))
+    except ValueError:
+        initial_id = 1
+
     with st.sidebar:
         st.header("Settings")
-        db_path = st.text_input("DB path", value=str(ROOT / "data" / "outfit.db"))
-        ollama = st.text_input("Ollama URL", value=os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL))
-        model = st.text_input("Model", value=os.environ.get("OLLAMA_VISION_MODEL", DEFAULT_VISION_MODEL))
-        page = st.radio("Page", ["Add", "List", "Edit", "Reclassify", "Recommend"], index=0)
+        db_path = st.text_input(
+            "DB path",
+            value=qp_db or str(ROOT / "data" / "outfit.db"),
+        )
+        ollama = st.text_input(
+            "Ollama URL",
+            value=qp_ollama or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL),
+        )
+        model = st.text_input(
+            "Model",
+            value=qp_model or os.environ.get("OLLAMA_VISION_MODEL", DEFAULT_VISION_MODEL),
+        )
+        pages = ["Add", "List", "Edit", "Reclassify", "Recommend"]
+        page = st.radio("Page", pages, index=pages.index(initial_page))
 
     dpath = Path(db_path).expanduser().resolve()
     db.init_db(dpath)
@@ -86,7 +118,7 @@ def main() -> None:
         st.subheader("Edit attributes (manual)")
         cols = st.columns(2)
         with cols[0]:
-            item_id = st.number_input("id", min_value=1, step=1, value=1)
+            item_id = st.number_input("id", min_value=1, step=1, value=initial_id)
             before = db.get_item(int(item_id), dpath)
             st.caption("Before")
             st.code(_json(before) if before else _json({"ok": False, "error": "not found"}), language="json")
@@ -137,7 +169,7 @@ def main() -> None:
 
     elif page == "Reclassify":
         st.subheader("Reclassify (run VLM again)")
-        item_id = st.number_input("id", min_value=1, step=1, value=1)
+        item_id = st.number_input("id", min_value=1, step=1, value=initial_id)
         before = db.get_item(int(item_id), dpath)
         st.caption("Current")
         st.code(_json(before) if before else _json({"ok": False, "error": "not found"}), language="json")
