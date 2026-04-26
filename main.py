@@ -439,6 +439,7 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                 ollama_base=ollama_base,
                 use_llm=bool(args.llm),
                 avoid_triplet_keys=avoid_keys if bool(args.diversify) else None,
+                avoid_scope=str(args.diversify_scope or "all"),
             )
             out_json = json.loads(out.model_dump_json())
             results.append({"preset": p.name, "label": p.label, "ok": True, "output": out_json})
@@ -462,7 +463,8 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                         combo_freq[ck] = combo_freq.get(ck, 0) + 1
                         preset_combo.setdefault(p.name, {})[str(pat)] = ck
                     if bool(args.diversify):
-                        avoid_keys.add(_triplet_key_from_ids(item_ids))
+                        if str(args.diversify_scope or "all") == "all" or str(pat) == "safe":
+                            avoid_keys.add(_triplet_key_from_ids(item_ids))
                 summaries.append(
                     {
                         "preset": p.name,
@@ -620,6 +622,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dg.add_argument("--full", action="store_true", help="--summary 時も results（フル出力）を含める")
     dg.add_argument("--analyze", action="store_true", help="偏り検知（頻出アイテム/頻出コーデ/重複率）を含める")
     dg.add_argument("--diversify", action="store_true", help="ペルソナ間で同じ3点コーデ（top/bottom/shoes）を避ける")
+    dg.add_argument("--diversify-scope", choices=["all", "safe"], default="all", help="被り回避を適用する範囲（all=全パターン, safe=無難のみ）")
     dg.set_defaults(func=_cmd_dogfood)
 
     return p

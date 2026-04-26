@@ -113,6 +113,45 @@ def test_recommend_avoid_triplet_keys(tmp_path: Path) -> None:
     inp = RecommendInput(situation="カフェ", temp_feel="普通", style="カジュアル")
     avoid = {f"{id_t1}-{id_b}-{id_s}"}
     with patch("recommender.narrate_outfit", side_effect=_fake_narrate):
-        out = recommend_outfits(grouped, inp, avoid_triplet_keys=avoid, use_llm=True, ollama_model="stub", ollama_base="http://x")
+        out = recommend_outfits(
+            grouped,
+            inp,
+            avoid_triplet_keys=avoid,
+            avoid_scope="all",
+            use_llm=True,
+            ollama_model="stub",
+            ollama_base="http://x",
+        )
     safe = next(p for p in out.proposals if p.pattern_label == "safe")
     assert safe.item_ids["top"] == id_t2
+
+
+def test_recommend_avoid_scope_safe_only(tmp_path: Path) -> None:
+    dp = tmp_path / "avoid_scope.db"
+    db.init_db(dp)
+    t1 = ClothesAttributes(category="tops", color="白", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    t2 = ClothesAttributes(category="tops", color="黒", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    b = ClothesAttributes(category="bottoms", color="紺", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    s = ClothesAttributes(category="shoes", color="黒", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    id_t1 = db.insert_item("/t1.png", "1" * 64, t1, t1.model_dump(), path=dp)
+    id_t2 = db.insert_item("/t2.png", "2" * 64, t2, t2.model_dump(), path=dp)
+    id_b = db.insert_item("/b.png", "3" * 64, b, b.model_dump(), path=dp)
+    id_s = db.insert_item("/s.png", "4" * 64, s, s.model_dump(), path=dp)
+
+    grouped = db.get_items_by_categories(["tops", "bottoms", "shoes"], dp)
+    inp = RecommendInput(situation="カフェ", temp_feel="普通", style="カジュアル")
+    avoid = {f"{id_t1}-{id_b}-{id_s}"}
+    with patch("recommender.narrate_outfit", side_effect=_fake_narrate):
+        out = recommend_outfits(
+            grouped,
+            inp,
+            avoid_triplet_keys=avoid,
+            avoid_scope="safe",
+            use_llm=True,
+            ollama_model="stub",
+            ollama_base="http://x",
+        )
+    safe = next(p for p in out.proposals if p.pattern_label == "safe")
+    clean = next(p for p in out.proposals if p.pattern_label == "clean")
+    assert safe.item_ids["top"] == id_t2  # avoided triplet is skipped for safe
+    assert clean.item_ids["top"] == id_t1  # allowed for clean-only scope
