@@ -400,6 +400,16 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
             "style": it.get("style", []),
         }
 
+    def _combo_key(item_ids: dict) -> str:
+        top = item_ids.get("top")
+        bottom = item_ids.get("bottom")
+        shoes = item_ids.get("shoes")
+        outer = item_ids.get("outer")
+        parts = [f"top={top}", f"bottom={bottom}", f"shoes={shoes}"]
+        if outer is not None:
+            parts.append(f"outer={outer}")
+        return ",".join(parts)
+
     presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
     presets = load_presets(presets_path)
     only = [x.strip() for x in (args.only or "").split(",") if x.strip()]
@@ -410,6 +420,11 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
     ollama_base = args.ollama or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL)
     results = []
     summaries = []
+    analyses: dict[str, object] = {}
+    item_freq: dict[str, int] = {}
+    combo_freq: dict[str, int] = {}
+    preset_combo: dict[str, dict[str, str]] = {}
+
     for p in presets:
         inp = RecommendInput(situation=p.situation, temp_feel=p.temp_feel, style=p.style, model=args.model)  # type: ignore[arg-type]
         try:
@@ -434,6 +449,13 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                         "items": {k: _item_brief(v) for k, v in item_ids.items()},
                         "summary": pr.get("summary", ""),
                     }
+                    # analyze: item + combo frequencies
+                    if bool(args.analyze):
+                        for k, v in (item_ids or {}).items():
+                            item_freq[f"{k}:{v}"] = item_freq.get(f"{k}:{v}", 0) + 1
+                        ck = _combo_key(item_ids)
+                        combo_freq[ck] = combo_freq.get(ck, 0) + 1
+                        preset_combo.setdefault(p.name, {})[str(pat)] = ck
                 summaries.append(
                     {
                         "preset": p.name,
@@ -449,12 +471,38 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
         except Exception as e:  # noqa: BLE001
             results.append({"preset": p.name, "label": p.label, "ok": False, "error": str(e)})
             summaries.append({"preset": p.name, "label": p.label, "error": str(e)})
+
+    if bool(args.analyze):
+        # Top-N frequent item occurrences and combos
+        top_items = sorted(item_freq.items(), key=lambda x: (-x[1], x[0]))[:20]
+        top_combos = sorted(combo_freq.items(), key=lambda x: (-x[1], x[0]))[:20]
+
+        # Compute overlap ratio between presets for the "safe" pattern (as representative)
+        safe_keys = []
+        for preset, mp in preset_combo.items():
+            if "safe" in mp:
+                safe_keys.append((preset, mp["safe"]))
+        uniq_safe = len(set(k for _, k in safe_keys)) if safe_keys else 0
+        overlap_safe = (1.0 - (uniq_safe / len(safe_keys))) if safe_keys else 0.0
+
+        analyses = {
+            "top_items": [{"key": k, "count": c} for k, c in top_items],
+            "top_combos": [{"combo": k, "count": c} for k, c in top_combos],
+            "safe_overlap_ratio": overlap_safe,
+            "safe_unique_combos": uniq_safe,
+            "safe_total": len(safe_keys),
+            "notes": [
+                "safe_overlap_ratio が高いほど、ペルソナ間で同じコーデが出がちです。",
+                "top_combos の上位が偏っている場合、ワードローブの偏り or スコア重みの調整余地があります。",
+            ],
+        }
     payload = {
         "ok": True,
         "db": str(dpath) if dpath else "default",
         "presets_path": str(presets_path),
         "count": len(results),
         "use_llm": bool(args.llm),
+        "analysis": analyses if bool(args.analyze) else {},
         "summaries": summaries if bool(args.summary) else [],
         "results": results if (not bool(args.summary) or bool(args.full)) else [],
     }
@@ -563,6 +611,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dg.add_argument("--llm", action="store_true", help="理由文生成も回す（遅い）")
     dg.add_argument("--summary", action="store_true", help="比較用の短い summary を含める（既定で results は省略）")
     dg.add_argument("--full", action="store_true", help="--summary 時も results（フル出力）を含める")
+    dg.add_argument("--analyze", action="store_true", help="偏り検知（頻出アイテム/頻出コーデ/重複率）を含める")
     dg.set_defaults(func=_cmd_dogfood)
 
     return p
