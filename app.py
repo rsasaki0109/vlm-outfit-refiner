@@ -88,25 +88,37 @@ def main() -> None:
 
     if page == "Add":
         st.subheader("Add clothing image")
-        up = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg", "webp"])
-        if up:
-            st.image(up)
-        if st.button("Extract attributes and save", disabled=up is None):
-            try:
-                img_path = _save_upload(up, ROOT / "data" / "uploads")
-                fhash = _sha256_bytes(img_path.read_bytes())
-                existing = db.find_by_hash(fhash, dpath)
-                if existing is not None:
-                    st.warning("Already registered (deduplicated).")
-                    st.code(_json({"ok": True, "deduplicated": True, "existing_id": existing}), language="json")
-                else:
+        ups = st.file_uploader(
+            "Upload images",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=True,
+        )
+        if ups:
+            st.caption(f"{len(ups)} files selected")
+            st.image(ups[: min(6, len(ups))])
+        if st.button("Extract attributes and save", disabled=not ups):
+            results = []
+            ok_n = dedup_n = fail_n = 0
+            for up in ups:
+                try:
+                    img_path = _save_upload(up, ROOT / "data" / "uploads")
+                    fhash = _sha256_bytes(img_path.read_bytes())
+                    existing = db.find_by_hash(fhash, dpath)
+                    if existing is not None:
+                        dedup_n += 1
+                        ok_n += 1
+                        results.append({"ok": True, "deduplicated": True, "existing_id": existing, "image_path": str(img_path)})
+                        continue
                     attrs = extract_clothing_attributes(img_path, model=model, base_url=ollama)
                     row_dict = attrs.model_dump()
                     iid = db.insert_item(str(img_path), fhash, attrs, row_dict, path=dpath)
-                    st.success(f"Saved: id={iid}")
-                    st.code(_json({"ok": True, "id": iid, "image_path": str(img_path), "attributes": row_dict}), language="json")
-            except Exception as e:  # noqa: BLE001
-                st.error(str(e))
+                    ok_n += 1
+                    results.append({"ok": True, "deduplicated": False, "id": iid, "image_path": str(img_path), "attributes": row_dict})
+                except Exception as e:  # noqa: BLE001
+                    fail_n += 1
+                    results.append({"ok": False, "error": str(e), "filename": getattr(up, "name", "")})
+            st.success(f"done: ok={ok_n} (dedup={dedup_n}) failed={fail_n}")
+            st.code(_json({"ok": True, "ok": ok_n, "deduplicated": dedup_n, "failed": fail_n, "results": results}), language="json")
 
     elif page == "List":
         st.subheader("Registered items")
