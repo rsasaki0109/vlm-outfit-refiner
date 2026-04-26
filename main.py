@@ -379,6 +379,27 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
         ["tops", "bottoms", "shoes", "outer", "bag", "accessory"],
         dpath,
     )
+    # Build id -> item map for summary enrichment
+    id_map: dict[int, dict] = {}
+    for cat_items in grouped.values():
+        for it in cat_items:
+            try:
+                id_map[int(it["id"])] = it
+            except Exception:
+                continue
+
+    def _item_brief(item_id: int) -> dict:
+        it = id_map.get(int(item_id))
+        if not it:
+            return {"id": int(item_id)}
+        return {
+            "id": int(it.get("id")),
+            "category": it.get("category"),
+            "color": it.get("color"),
+            "formality": it.get("formality"),
+            "style": it.get("style", []),
+        }
+
     presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
     presets = load_presets(presets_path)
     only = [x.strip() for x in (args.only or "").split(",") if x.strip()]
@@ -388,6 +409,7 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
         presets = presets[: int(args.limit)]
     ollama_base = args.ollama or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL)
     results = []
+    summaries = []
     for p in presets:
         inp = RecommendInput(situation=p.situation, temp_feel=p.temp_feel, style=p.style, model=args.model)  # type: ignore[arg-type]
         try:
@@ -398,16 +420,43 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                 ollama_base=ollama_base,
                 use_llm=bool(args.llm),
             )
-            results.append({"preset": p.name, "label": p.label, "ok": True, "output": json.loads(out.model_dump_json())})
+            out_json = json.loads(out.model_dump_json())
+            results.append({"preset": p.name, "label": p.label, "ok": True, "output": out_json})
+            # summary
+            try:
+                props = out_json.get("proposals") or []
+                by_pat = {}
+                for pr in props:
+                    pat = pr.get("pattern_label")
+                    item_ids = pr.get("item_ids") or {}
+                    by_pat[str(pat)] = {
+                        "item_ids": item_ids,
+                        "items": {k: _item_brief(v) for k, v in item_ids.items()},
+                        "summary": pr.get("summary", ""),
+                    }
+                summaries.append(
+                    {
+                        "preset": p.name,
+                        "label": p.label,
+                        "situation": out_json.get("situation"),
+                        "temp_feel": out_json.get("temp_feel"),
+                        "user_style": out_json.get("user_style"),
+                        "by_pattern": by_pat,
+                    }
+                )
+            except Exception:
+                summaries.append({"preset": p.name, "label": p.label, "error": "failed to build summary"})
         except Exception as e:  # noqa: BLE001
             results.append({"preset": p.name, "label": p.label, "ok": False, "error": str(e)})
+            summaries.append({"preset": p.name, "label": p.label, "error": str(e)})
     payload = {
         "ok": True,
         "db": str(dpath) if dpath else "default",
         "presets_path": str(presets_path),
         "count": len(results),
         "use_llm": bool(args.llm),
-        "results": results,
+        "summaries": summaries if bool(args.summary) else [],
+        "results": results if (not bool(args.summary) or bool(args.full)) else [],
     }
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
@@ -512,6 +561,8 @@ def _build_parser() -> argparse.ArgumentParser:
     dg.add_argument("--only", default="", help="実行するプリセット名（カンマ区切り）")
     dg.add_argument("--limit", type=int, default=0, help="最大件数（0=無制限）")
     dg.add_argument("--llm", action="store_true", help="理由文生成も回す（遅い）")
+    dg.add_argument("--summary", action="store_true", help="比較用の短い summary を含める（既定で results は省略）")
+    dg.add_argument("--full", action="store_true", help="--summary 時も results（フル出力）を含める")
     dg.set_defaults(func=_cmd_dogfood)
 
     return p
