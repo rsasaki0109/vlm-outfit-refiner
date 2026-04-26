@@ -42,6 +42,97 @@
       "situation": "普段",
       "temp_feel": "暑い",
       "style": "カジュアル"
+    },
+    {
+      "name": "rainy_commute",
+      "label": "雨の日 / 通勤",
+      "situation": "仕事",
+      "temp_feel": "普通",
+      "style": "きれいめ,雨,汚れにくい"
+    },
+    {
+      "name": "job_interview",
+      "label": "面接 / きちんと",
+      "situation": "面接",
+      "temp_feel": "普通",
+      "style": "きれいめ,フォーマル"
+    },
+    {
+      "name": "formal_event",
+      "label": "式典 / フォーマル",
+      "situation": "式典",
+      "temp_feel": "普通",
+      "style": "フォーマル,上品"
+    },
+    {
+      "name": "wedding_party",
+      "label": "結婚式 / 二次会",
+      "situation": "結婚式",
+      "temp_feel": "普通",
+      "style": "きれいめ,華やか"
+    },
+    {
+      "name": "dinner_date",
+      "label": "食事 / きれいめ",
+      "situation": "お食事",
+      "temp_feel": "普通",
+      "style": "きれいめ,上品"
+    },
+    {
+      "name": "shopping_weekend",
+      "label": "買い物 / 休日",
+      "situation": "買い物",
+      "temp_feel": "普通",
+      "style": "カジュアル,楽"
+    },
+    {
+      "name": "park_with_kids",
+      "label": "公園 / 子連れ",
+      "situation": "遊び",
+      "temp_feel": "普通",
+      "style": "カジュアル,動きやすい,汚れてもOK"
+    },
+    {
+      "name": "sporty_day",
+      "label": "スポーツ / 動きやすい",
+      "situation": "スポーツ",
+      "temp_feel": "普通",
+      "style": "スポーティ,動きやすい"
+    },
+    {
+      "name": "summer_outdoor",
+      "label": "暑い日 / 外出",
+      "situation": "旅行",
+      "temp_feel": "暑い",
+      "style": "カジュアル,涼しい"
+    },
+    {
+      "name": "winter_date",
+      "label": "寒い日 / デート",
+      "situation": "デート",
+      "temp_feel": "寒い",
+      "style": "きれいめ,暖かい"
+    },
+    {
+      "name": "work_meeting",
+      "label": "会議 / 仕事",
+      "situation": "会議",
+      "temp_feel": "普通",
+      "style": "きれいめ,オフィス"
+    },
+    {
+      "name": "work_presentation",
+      "label": "発表 / きちんと",
+      "situation": "仕事",
+      "temp_feel": "普通",
+      "style": "きれいめ,信頼感"
+    },
+    {
+      "name": "home_relax",
+      "label": "部屋着 / リラックス",
+      "situation": "部屋着",
+      "temp_feel": "普通",
+      "style": "リラックス,楽"
     }
   ]
 }
