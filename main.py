@@ -22,6 +22,7 @@ from vlm import (
     extract_clothing_attributes,
 )
 from image_tools import PortraitOptions, make_profile_portrait
+from presets import find_preset, load_presets, presets_to_json
 
 
 def _file_sha256(p: Path) -> str:
@@ -157,7 +158,22 @@ def _cmd_recommend(args: argparse.Namespace) -> int:
         ["tops", "bottoms", "shoes", "outer", "bag", "accessory"],
         dpath,
     )
-    if args.situation:
+    preset_name = (args.preset or "").strip()
+    if preset_name:
+        presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
+        try:
+            presets = load_presets(presets_path)
+        except Exception as e:  # noqa: BLE001
+            print(json.dumps({"ok": False, "error": f"failed to load presets: {e}"}, ensure_ascii=False), file=sys.stderr)
+            return 2
+        pr = find_preset(presets, preset_name)
+        if pr is None:
+            print(json.dumps({"ok": False, "error": f"unknown preset: {preset_name}", "available": [p.name for p in presets]}, ensure_ascii=False), file=sys.stderr)
+            return 2
+        sit = pr.situation
+        temp = pr.temp_feel
+        st = pr.style
+    elif args.situation:
         sit = args.situation
         temp = _parse_temp(args.temp or "普通")
         st = args.style or "カジュアル"
@@ -173,7 +189,11 @@ def _cmd_recommend(args: argparse.Namespace) -> int:
     ollama_base = args.ollama or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL)
     try:
         res = recommend_outfits(
-            g, inp, ollama_model=args.model, ollama_base=ollama_base
+            g,
+            inp,
+            ollama_model=args.model,
+            ollama_base=ollama_base,
+            use_llm=not bool(args.no_llm),
         )
     except Exception as e:  # noqa: BLE001
         print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
@@ -328,6 +348,71 @@ def _cmd_portrait(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_preset_list(args: argparse.Namespace) -> int:
+    presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
+    try:
+        presets = load_presets(presets_path)
+    except Exception as e:  # noqa: BLE001
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps({"ok": True, "path": str(presets_path), "presets": presets_to_json(presets)}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _cmd_preset_show(args: argparse.Namespace) -> int:
+    presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
+    presets = load_presets(presets_path)
+    pr = find_preset(presets, args.name)
+    if pr is None:
+        print(json.dumps({"ok": False, "error": f"unknown preset: {args.name}", "available": [p.name for p in presets]}, ensure_ascii=False), file=sys.stderr)
+        return 2
+    print(json.dumps({"ok": True, "preset": presets_to_json([pr])[0]}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _cmd_dogfood(args: argparse.Namespace) -> int:
+    dpath: Path | None = Path(args.db) if args.db else None
+    if dpath:
+        dpath = dpath.expanduser().resolve()
+    db.init_db(dpath)
+    grouped = db.get_items_by_categories(
+        ["tops", "bottoms", "shoes", "outer", "bag", "accessory"],
+        dpath,
+    )
+    presets_path = Path(args.presets).expanduser().resolve() if args.presets else (_ROOT / "presets" / "presets.json")
+    presets = load_presets(presets_path)
+    only = [x.strip() for x in (args.only or "").split(",") if x.strip()]
+    if only:
+        presets = [p for p in presets if p.name in set(only)]
+    if args.limit and args.limit > 0:
+        presets = presets[: int(args.limit)]
+    ollama_base = args.ollama or os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_URL)
+    results = []
+    for p in presets:
+        inp = RecommendInput(situation=p.situation, temp_feel=p.temp_feel, style=p.style, model=args.model)  # type: ignore[arg-type]
+        try:
+            out = recommend_outfits(
+                grouped,
+                inp,
+                ollama_model=args.model,
+                ollama_base=ollama_base,
+                use_llm=bool(args.llm),
+            )
+            results.append({"preset": p.name, "label": p.label, "ok": True, "output": json.loads(out.model_dump_json())})
+        except Exception as e:  # noqa: BLE001
+            results.append({"preset": p.name, "label": p.label, "ok": False, "error": str(e)})
+    payload = {
+        "ok": True,
+        "db": str(dpath) if dpath else "default",
+        "presets_path": str(presets_path),
+        "count": len(results),
+        "use_llm": bool(args.llm),
+        "results": results,
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="VLM による服属性登録とローカルコーデ提案 (Ollama + SQLite)",
@@ -368,6 +453,9 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument(
         "--style", default="", help="非対話: 好みのスタイル（例: きれいめ）"
     )
+    r.add_argument("--preset", default="", help="プリセット名（preset list で確認）")
+    r.add_argument("--presets", default="", help="プリセットJSONパス（省略時: presets/presets.json）")
+    r.add_argument("--no-llm", action="store_true", help="理由文生成をスキップ（高速 dogfood 向け）")
     r.set_defaults(func=_cmd_recommend)
 
     l = sub.add_parser("list", help="登録アイテムを一覧 (JSON)")
@@ -409,6 +497,22 @@ def _build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--bg", choices=["solid", "gradient"], default="gradient")
     pr.add_argument("--vignette", type=float, default=0.18, help="周辺減光 0..1")
     pr.set_defaults(func=_cmd_portrait)
+
+    ps = sub.add_parser("preset", help="想定ユーザー（ペルソナ）プリセット")
+    ps.add_argument("--presets", default="", help="プリセットJSONパス（省略時: presets/presets.json）")
+    pss = ps.add_subparsers(dest="preset_cmd", required=True)
+    psl = pss.add_parser("list", help="プリセット一覧")
+    psl.set_defaults(func=_cmd_preset_list)
+    pshow = pss.add_parser("show", help="プリセット内容を表示")
+    pshow.add_argument("name", type=str)
+    pshow.set_defaults(func=_cmd_preset_show)
+
+    dg = sub.add_parser("dogfood", help="複数プリセットで recommend をまとめて実行")
+    dg.add_argument("--presets", default="", help="プリセットJSONパス（省略時: presets/presets.json）")
+    dg.add_argument("--only", default="", help="実行するプリセット名（カンマ区切り）")
+    dg.add_argument("--limit", type=int, default=0, help="最大件数（0=無制限）")
+    dg.add_argument("--llm", action="store_true", help="理由文生成も回す（遅い）")
+    dg.set_defaults(func=_cmd_dogfood)
 
     return p
 

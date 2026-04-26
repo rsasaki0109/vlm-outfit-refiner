@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "name": "cafe_casual",
+      "label": "カフェ / カジュアル",
+      "situation": "カフェ",
+      "temp_feel": "普通",
+      "style": "カジュアル"
+    },
+    {
+      "name": "office_clean",
+      "label": "仕事 / きれいめ",
+      "situation": "仕事",
+      "temp_feel": "普通",
+      "style": "きれいめ"
+    },
+    {
+      "name": "date_clean",
+      "label": "デート / きれいめ",
+      "situation": "デート",
+      "temp_feel": "普通",
+      "style": "きれいめ"
+    },
+    {
+      "name": "travel_easy",
+      "label": "旅行 / 動きやすい",
+      "situation": "旅行",
+      "temp_feel": "普通",
+      "style": "カジュアル,動きやすい"
+    },
+    {
+      "name": "winter_office",
+      "label": "寒い日 / 仕事",
+      "situation": "仕事",
+      "temp_feel": "寒い",
+      "style": "きれいめ"
+    },
+    {
+      "name": "summer_casual",
+      "label": "暑い日 / 普段",
+      "situation": "普段",
+      "temp_feel": "暑い",
+      "style": "カジュアル"
+    }
+  ]
+}
+
