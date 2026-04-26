@@ -23,12 +23,17 @@
 
       <div class="hero">
         <div class="card heroText">
-          <h1>Local outfit recommender</h1>
-          <p>
-            手持ちの服の写真をローカル VLM で属性化し、シチュエーションに合わせたコーデ案を
-            <strong>無難 / きれいめ / 攻め</strong>の 3 通り、理由付き（JSON）で返すツール。
-            外部クラウド API は使いません（Ollama 前提）。
+          <h1>服の写真だけで、<br />今日の「正解」を3案出す。</h1>
+          <p class="lead">
+            服が増えても「何を合わせるか」で迷う。写真を登録しておけば、
+            <strong>シーン×気温感×雰囲気</strong>から <strong>無難 / きれいめ / 攻め</strong>の3パターンを理由つきで返します。
+            しかも <strong>ローカル完結</strong>（外部クラウド API なし）。
           </p>
+          <ul class="ul">
+            <li><strong>手持ちの服</strong>を “検索できる属性” に自動整理（SQLite）</li>
+            <li><strong>3パターン提案</strong>で迷いをゼロに（CLI / Streamlit）</li>
+            <li>VLMの誤分類は <strong>reclassify</strong>（再推論）か <strong>edit</strong>（手修正）で即リカバリ</li>
+          </ul>
           <div class="pillRow">
             <div class="pill"><strong>Python</strong> 3.10+</div>
             <div class="pill"><strong>Ollama</strong> Vision</div>
@@ -36,39 +41,52 @@
             <div class="pill"><strong>JSON</strong> I/O</div>
             <div class="pill"><strong>CLI</strong> + Streamlit</div>
           </div>
-          <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <a class="btn primary" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%82%AF%E3%82%A4%E3%83%83%E3%82%AF%E3%82%B9%E3%82%BF%E3%83%BC%E3%83%88">Quickstart</a>
-            <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%ABui%EF%BC%88streamlit%EF%BC%89">UI</a>
-            <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89%E6%97%A9%E8%A6%8B">Commands</a>
+          <div class="ctaRow">
+            <a class="btn primary" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%82%AF%E3%82%A4%E3%83%83%E3%82%AF%E3%82%B9%E3%82%BF%E3%83%BC%E3%83%88">今すぐ試す</a>
+            <a class="btn ghost" href="#screens">UIを見る</a>
+            <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner">コードを見る</a>
           </div>
+          <div class="code" aria-label="quickstart commands">
+ollama serve
+ollama pull qwen2.5vl:7b
+
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+python main.py add ./photos/shirt.jpg
+python main.py add ./photos/pants.jpg
+python main.py add ./photos/shoes.jpg
+python main.py recommend
+          </div>
+          <div class="small">※ 画像や属性はローカルの SQLite に保存。外部クラウドへ送信しません。</div>
         </div>
 
         <div class="card preview">
-          <header>README banner</header>
+          <header>実際の画面</header>
           <img src="./assets/banner.png" alt="banner" />
         </div>
       </div>
 
-      <div class="grid">
+      <div class="grid" id="why">
         <div class="card tile">
-          <h3>1) 服画像を登録</h3>
-          <p>ローカル画像 → VLM で属性 JSON → SQLite へ保存。重複は SHA-256 で回避。</p>
-          <div class="k">python main.py add ./photos/shirt.jpg</div>
+          <h3>迷いが減る</h3>
+          <p>「何着る？」を考える時間を減らし、候補を3つに絞って即決できる。</p>
+          <div class="k">3 patterns: safe / clean / bold</div>
         </div>
         <div class="card tile">
-          <h3>2) 3パターン提案</h3>
-          <p>tops×bottoms×shoes の組み合わせをスコアリングし、上位から 3 案＋理由を出力。</p>
-          <div class="k">python main.py recommend</div>
+          <h3>ローカル完結</h3>
+          <p>外部クラウド API を使わず、Ollama + SQLite で完結。写真を外に出したくない人向け。</p>
+          <div class="k">Ollama (local) + SQLite</div>
         </div>
         <div class="card tile">
-          <h3>3) 手直しも簡単</h3>
-          <p>VLM の誤分類は reclassify（再推論）か edit（手修正）でリカバリできます。</p>
-          <div class="k">python main.py edit 2 --category bottoms</div>
+          <h3>直せる</h3>
+          <p>モデルの誤分類があっても、ワンクリックで取り直し or 手修正して運用できる。</p>
+          <div class="k">reclassify / edit</div>
         </div>
       </div>
 
-      <div class="section">
-        <h2>Real UI screenshots</h2>
+      <div class="section" id="screens">
+        <h2>Real UI screenshots（実UI）</h2>
         <div class="two">
           <div class="card shot">
             <header>Streamlit (Edit page)</header>
@@ -81,10 +99,37 @@
         </div>
       </div>
 
+      <div class="section">
+        <h2>よくある不安（先回り）</h2>
+        <div class="stack">
+          <div class="card tile">
+            <h3>写真は外部に送られる？</h3>
+            <p>いいえ。外部クラウド API は使いません。Ollama はローカルで動かし、DB はローカルの SQLite です。</p>
+            <div class="sep"></div>
+            <h3>精度が微妙だったら？</h3>
+            <p>まず <span class="k">reclassify</span> で取り直し。それでも変なら <span class="k">edit</span> で人間が直して運用できます。</p>
+          </div>
+          <div class="card tile faq">
+            <h3 style="margin-bottom:6px;">FAQ</h3>
+            <details>
+              <summary>必要な服の枚数は？</summary>
+              <p><strong>tops / bottoms / shoes</strong> がそれぞれ1枚以上あると提案できます。</p>
+            </details>
+            <details>
+              <summary>UIは必須？</summary>
+              <p>いいえ。CLIだけでも動きます。UIは <span class="k">streamlit run app.py</span> で起動できます。</p>
+            </details>
+            <details>
+              <summary>おすすめのモデルは？</summary>
+              <p>Vision対応のモデルならOK。例として <span class="k">qwen2.5vl:7b</span> を使っています。</p>
+            </details>
+          </div>
+        </div>
+      </div>
+
       <div class="footer">
-        GitHub Pages: Settings → Pages → <strong>Deploy from a branch</strong> → Branch: <strong>main</strong> / Folder: <strong>/docs</strong>
-        <br />
-        反映後、このページは <code>https://rsasaki0109.github.io/vlm-outfit-refiner/</code> で見れます。
+        <div><strong>Get started</strong>: 詳細は GitHub の README を参照 → <a href="https://github.com/rsasaki0109/vlm-outfit-refiner#readme">README</a></div>
+        <div class="small">This project is an MVP for local use. Model output may be inaccurate; always sanity-check results.</div>
       </div>
     </div>
   </body>
