@@ -424,6 +424,10 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
     item_freq: dict[str, int] = {}
     combo_freq: dict[str, int] = {}
     preset_combo: dict[str, dict[str, str]] = {}
+    avoid_keys: set[str] = set()
+
+    def _triplet_key_from_ids(item_ids: dict) -> str:
+        return f"{item_ids.get('top')}-{item_ids.get('bottom')}-{item_ids.get('shoes')}"
 
     for p in presets:
         inp = RecommendInput(situation=p.situation, temp_feel=p.temp_feel, style=p.style, model=args.model)  # type: ignore[arg-type]
@@ -434,6 +438,7 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                 ollama_model=args.model,
                 ollama_base=ollama_base,
                 use_llm=bool(args.llm),
+                avoid_triplet_keys=avoid_keys if bool(args.diversify) else None,
             )
             out_json = json.loads(out.model_dump_json())
             results.append({"preset": p.name, "label": p.label, "ok": True, "output": out_json})
@@ -456,6 +461,8 @@ def _cmd_dogfood(args: argparse.Namespace) -> int:
                         ck = _combo_key(item_ids)
                         combo_freq[ck] = combo_freq.get(ck, 0) + 1
                         preset_combo.setdefault(p.name, {})[str(pat)] = ck
+                    if bool(args.diversify):
+                        avoid_keys.add(_triplet_key_from_ids(item_ids))
                 summaries.append(
                     {
                         "preset": p.name,
@@ -612,6 +619,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dg.add_argument("--summary", action="store_true", help="比較用の短い summary を含める（既定で results は省略）")
     dg.add_argument("--full", action="store_true", help="--summary 時も results（フル出力）を含める")
     dg.add_argument("--analyze", action="store_true", help="偏り検知（頻出アイテム/頻出コーデ/重複率）を含める")
+    dg.add_argument("--diversify", action="store_true", help="ペルソナ間で同じ3点コーデ（top/bottom/shoes）を避ける")
     dg.set_defaults(func=_cmd_dogfood)
 
     return p
