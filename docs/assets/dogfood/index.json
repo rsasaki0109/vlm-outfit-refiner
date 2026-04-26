@@ -1,0 +1,14 @@
+[
+  {
+    "preset": "cafe_casual",
+    "path": "./assets/dogfood/cafe_casual.json"
+  },
+  {
+    "preset": "office_clean",
+    "path": "./assets/dogfood/office_clean.json"
+  },
+  {
+    "preset": "winter_office",
+    "path": "./assets/dogfood/winter_office.json"
+  }
+]
