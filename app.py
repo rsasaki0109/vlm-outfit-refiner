@@ -9,6 +9,7 @@ from typing import Any
 import streamlit as st
 
 import db
+from image_tools import PortraitOptions, make_profile_portrait
 from models.schema import RecommendInput
 from recommender import recommend_outfits
 from vlm import DEFAULT_OLLAMA_URL, DEFAULT_VISION_MODEL, extract_clothing_attributes
@@ -55,6 +56,7 @@ def main() -> None:
         "edit": "Edit",
         "reclassify": "Reclassify",
         "recommend": "Recommend",
+        "portrait": "Portrait",
     }
     initial_page = page_map.get(qp_page, "Add")
     initial_id = 1
@@ -78,7 +80,7 @@ def main() -> None:
             "Model",
             value=qp_model or os.environ.get("OLLAMA_VISION_MODEL", DEFAULT_VISION_MODEL),
         )
-        pages = ["Add", "List", "Edit", "Reclassify", "Recommend"]
+        pages = ["Add", "List", "Edit", "Reclassify", "Recommend", "Portrait"]
         page = st.radio("Page", pages, index=pages.index(initial_page))
 
     dpath = Path(db_path).expanduser().resolve()
@@ -192,7 +194,7 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 st.error(str(e))
 
-    else:  # Recommend
+    elif page == "Recommend":
         st.subheader("Recommend (3 patterns)")
         situation = st.text_input("situation", value="カフェ")
         temp = st.selectbox("temp_feel", ["普通", "暑い", "寒い"], index=0)
@@ -207,6 +209,26 @@ def main() -> None:
                 out = recommend_outfits(grouped, inp, ollama_model=model, ollama_base=ollama)
                 payload = json.loads(out.model_dump_json())
                 st.code(_json({"ok": True, **payload}), language="json")
+            except Exception as e:  # noqa: BLE001
+                st.error(str(e))
+
+    else:  # Portrait
+        st.subheader("Portrait (profile photo maker)")
+        up = st.file_uploader("Upload a selfie/photo", type=["png", "jpg", "jpeg", "webp"])
+        size = st.slider("size", min_value=512, max_value=2048, value=1024, step=128)
+        bg = st.selectbox("background", ["gradient", "solid"], index=0)
+        vignette = st.slider("vignette", min_value=0.0, max_value=0.6, value=0.18, step=0.02)
+        if up:
+            st.image(up)
+        if st.button("Generate portrait", disabled=up is None):
+            try:
+                src = _save_upload(up, ROOT / "data" / "uploads")
+                dst = (ROOT / "data" / "portraits" / (src.stem + ".portrait.png")).resolve()
+                opt = PortraitOptions(size=int(size), bg_style=bg, vignette=float(vignette))
+                outp = make_profile_portrait(src, dst, opt=opt)
+                st.success("Generated.")
+                st.image(str(outp))
+                st.code(_json({"ok": True, "src": str(src), "dst": str(outp)}), language="json")
             except Exception as e:  # noqa: BLE001
                 st.error(str(e))
 

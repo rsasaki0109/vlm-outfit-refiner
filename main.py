@@ -21,6 +21,7 @@ from vlm import (
     DEFAULT_VISION_MODEL,
     extract_clothing_attributes,
 )
+from image_tools import PortraitOptions, make_profile_portrait
 
 
 def _file_sha256(p: Path) -> str:
@@ -248,6 +249,29 @@ def _cmd_reclassify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_portrait(args: argparse.Namespace) -> int:
+    src = Path(args.image_path).expanduser().resolve()
+    if not src.is_file():
+        print(json.dumps({"ok": False, "error": f"file not found: {src}"}, ensure_ascii=False), file=sys.stderr)
+        return 2
+    out_dir = Path(args.out_dir).expanduser().resolve() if args.out_dir else (_ROOT / "data" / "portraits")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dst = out_dir / (src.stem + ".portrait.png")
+
+    opt = PortraitOptions(
+        size=int(args.size),
+        bg_style=args.bg,
+        vignette=float(args.vignette),
+    )
+    try:
+        p = make_profile_portrait(src, dst, opt=opt)
+    except Exception as e:  # noqa: BLE001
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps({"ok": True, "src": str(src), "dst": str(p)}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="VLM による服属性登録とローカルコーデ提案 (Ollama + SQLite)",
@@ -311,6 +335,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     rc.add_argument("id", type=int, help="items.id（list で確認）")
     rc.set_defaults(func=_cmd_reclassify)
+
+    pr = sub.add_parser(
+        "portrait",
+        help="背景/色味/トリミングでプロフィール写真っぽく整える（ポーズや体型は変えない）",
+    )
+    pr.add_argument("image_path", type=str, help="入力画像パス")
+    pr.add_argument("--out-dir", default="", help="出力先ディレクトリ（省略時: data/portraits）")
+    pr.add_argument("--size", type=int, default=1024, help="出力サイズ（正方形）")
+    pr.add_argument("--bg", choices=["solid", "gradient"], default="gradient")
+    pr.add_argument("--vignette", type=float, default=0.18, help="周辺減光 0..1")
+    pr.set_defaults(func=_cmd_portrait)
 
     return p
 
