@@ -141,4 +141,9 @@ def narrate_outfit(
         base_url=base_url,
         force_json=True,
     )
-    return parse_json_object(content)
+    data = parse_json_object(content)
+    # Normalize optional fields to keep downstream JSON clean.
+    tips = data.get("tips", "")
+    if tips is None or str(tips).strip().lower() == "none":
+        data["tips"] = ""
+    return data
