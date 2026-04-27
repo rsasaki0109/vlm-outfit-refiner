@@ -1,0 +1,50 @@
+{
+  "preset": "winter_office",
+  "label": "寒い日 / 仕事",
+  "ok": true,
+  "output": {
+    "situation": "仕事",
+    "temp_feel": "寒い",
+    "user_style": "きれいめ",
+    "model": "qwen2.5vl:7b",
+    "proposals": [
+      {
+        "pattern_label": "safe",
+        "pattern_ja": "無難",
+        "item_ids": {
+          "top": 3,
+          "bottom": 1,
+          "shoes": 2
+        },
+        "summary": "仕事向けの無難コーデ（寒い）",
+        "reason": "・定番のバランス。シーンに馴染みやすく、失敗しにくい着こなし。\n・トップス/ボトムス/靴の基本3点で組みやすい\n・スタイル: きれいめ",
+        "tips": "色や小物で微調整して自分寄りに寄せるのがおすすめ"
+      },
+      {
+        "pattern_label": "clean",
+        "pattern_ja": "きれいめ",
+        "item_ids": {
+          "top": 3,
+          "bottom": 1,
+          "shoes": 2
+        },
+        "summary": "仕事向けのきれいめコーデ（寒い）",
+        "reason": "・清潔感と品格を出し、きちんと見せる。\n・トップス/ボトムス/靴の基本3点で組みやすい\n・スタイル: きれいめ",
+        "tips": "色や小物で微調整して自分寄りに寄せるのがおすすめ"
+      },
+      {
+        "pattern_label": "bold",
+        "pattern_ja": "攻め",
+        "item_ids": {
+          "top": 3,
+          "bottom": 1,
+          "shoes": 2
+        },
+        "summary": "仕事向けの攻めコーデ（寒い）",
+        "reason": "・トレンド感や個性を出し、印象に残るコーディネート。\n・トップス/ボトムス/靴の基本3点で組みやすい\n・スタイル: きれいめ",
+        "tips": "色や小物で微調整して自分寄りに寄せるのがおすすめ"
+      }
+    ]
+  },
+  "error": null
+}
