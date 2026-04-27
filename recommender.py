@@ -276,6 +276,7 @@ def recommend_outfits(
     ollama_base: str = DEFAULT_OLLAMA_URL,
     use_llm: bool = True,
     avoid_triplet_keys: set[str] | None = None,
+    avoid_scope: str = "all",  # "all" | "safe"
 ) -> RecommendOutput:
     tops = grouped.get("tops") or []
     bottoms = grouped.get("bottoms") or []
@@ -291,12 +292,15 @@ def recommend_outfits(
     triples = _all_triplets(tops, bottoms, shoes)
     outer_list = grouped.get("outer") or []
     chosen: list[tuple[str, str, str, _Scored, float]] = []
-    used_keys: set[str] = set(avoid_triplet_keys or set())
+    base_avoid: set[str] = set(avoid_triplet_keys or set())
+    used_keys: set[str] = set(base_avoid) if avoid_scope == "all" else set()
 
     for pat, ja, desc in PATTERN_META:
         best: _Scored | None = None
         best_sc = -1e18
         for t in triples:
+            if avoid_scope == "safe" and pat == "safe" and t.key in base_avoid:
+                continue
             if t.key in used_keys:
                 continue
             sc = _score_for_pattern(t, inp, target_f, seasons, user_toks, pat)
@@ -306,6 +310,8 @@ def recommend_outfits(
         if best is None:
             # All triples used: allow repeat for largest pattern set
             for t in triples:
+                if avoid_scope == "safe" and pat == "safe" and t.key in base_avoid:
+                    continue
                 sc = _score_for_pattern(t, inp, target_f, seasons, user_toks, pat)
                 if sc > best_sc:
                     best_sc = sc
