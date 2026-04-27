@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>vlm-outfit-refiner</title>
+    <meta
+      name="description"
+      content="ローカル VLM（Ollama）で服画像から属性を抽出し、3パターンのコーデ提案を返す CLI + Streamlit UI"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand"><span class="dot"></span>vlm-outfit-refiner</div>
+        <div class="links">
+          <a class="btn primary" href="https://github.com/rsasaki0109/vlm-outfit-refiner">GitHub</a>
+          <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner#readme">README</a>
+          <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner/issues">Issues</a>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="card heroText">
+          <h1>Local outfit recommender</h1>
+          <p>
+            手持ちの服の写真をローカル VLM で属性化し、シチュエーションに合わせたコーデ案を
+            <strong>無難 / きれいめ / 攻め</strong>の 3 通り、理由付き（JSON）で返すツール。
+            外部クラウド API は使いません（Ollama 前提）。
+          </p>
+          <div class="pillRow">
+            <div class="pill"><strong>Python</strong> 3.10+</div>
+            <div class="pill"><strong>Ollama</strong> Vision</div>
+            <div class="pill"><strong>SQLite</strong> local DB</div>
+            <div class="pill"><strong>JSON</strong> I/O</div>
+            <div class="pill"><strong>CLI</strong> + Streamlit</div>
+          </div>
+          <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a class="btn primary" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%82%AF%E3%82%A4%E3%83%83%E3%82%AF%E3%82%B9%E3%82%BF%E3%83%BC%E3%83%88">Quickstart</a>
+            <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%ABui%EF%BC%88streamlit%EF%BC%89">UI</a>
+            <a class="btn" href="https://github.com/rsasaki0109/vlm-outfit-refiner#%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89%E6%97%A9%E8%A6%8B">Commands</a>
+          </div>
+        </div>
+
+        <div class="card preview">
+          <header>README banner</header>
+          <img src="../assets/banner.png" alt="banner" />
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card tile">
+          <h3>1) 服画像を登録</h3>
+          <p>ローカル画像 → VLM で属性 JSON → SQLite へ保存。重複は SHA-256 で回避。</p>
+          <div class="k">python main.py add ./photos/shirt.jpg</div>
+        </div>
+        <div class="card tile">
+          <h3>2) 3パターン提案</h3>
+          <p>tops×bottoms×shoes の組み合わせをスコアリングし、上位から 3 案＋理由を出力。</p>
+          <div class="k">python main.py recommend</div>
+        </div>
+        <div class="card tile">
+          <h3>3) 手直しも簡単</h3>
+          <p>VLM の誤分類は reclassify（再推論）か edit（手修正）でリカバリできます。</p>
+          <div class="k">python main.py edit 2 --category bottoms</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Real UI screenshots</h2>
+        <div class="two">
+          <div class="card shot">
+            <header>Streamlit (Edit page)</header>
+            <img src="../assets/ui-real-edit.png" alt="Streamlit Edit screenshot" />
+          </div>
+          <div class="card shot">
+            <header>Streamlit (Preview)</header>
+            <img src="../assets/ui-preview.png" alt="Streamlit preview" />
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        GitHub Pages: Settings → Pages → <strong>Deploy from a branch</strong> → Branch: <strong>main</strong> / Folder: <strong>/docs</strong>
+        <br />
+        反映後、このページは <code>https://rsasaki0109.github.io/vlm-outfit-refiner/</code> で見れます。
+      </div>
+    </div>
+  </body>
+</html>
+
