@@ -226,6 +226,44 @@ python main.py recommend
         <div class="small muted">※ ページ上は短縮表示。完全な JSON は download から見れます。</div>
       </div>
 
+      <div class="section" id="personas">
+        <h2>ペルソナ別の一括検証（dogfood）</h2>
+        <div class="small">
+          想定ユーザー（仕事/カフェ/寒い日など）を切り替えて `recommend` をまとめて回し、結果を比較できます。
+        </div>
+        <div class="codeLabel">
+          <div>docs/assets/sample_dogfood.json</div>
+          <a href="./assets/sample_dogfood.json">download</a>
+        </div>
+        <div class="cards3">
+          <div class="card look">
+            <div class="lookTop">
+              <div class="tag clean"><span class="chip">仕事</span><span class="small muted">office_clean</span></div>
+            </div>
+            <p class="summary">仕事向けのきれいめコーデ（普通）</p>
+            <p class="reason">・清潔感と品格を出し、きちんと見せる。…</p>
+            <div class="ids">top=3 / bottom=1 / shoes=2</div>
+          </div>
+          <div class="card look">
+            <div class="lookTop">
+              <div class="tag safe"><span class="chip">カフェ</span><span class="small muted">cafe_casual</span></div>
+            </div>
+            <p class="summary">カフェ向けの無難コーデ（普通）</p>
+            <p class="reason">・定番のバランス。シーンに馴染みやすく、失敗しにくい着こなし。…</p>
+            <div class="ids">top=3 / bottom=1 / shoes=2</div>
+          </div>
+          <div class="card look">
+            <div class="lookTop">
+              <div class="tag bold"><span class="chip">寒い日</span><span class="small muted">winter_office</span></div>
+            </div>
+            <p class="summary">仕事向けの無難コーデ（寒い）</p>
+            <p class="reason">・定番のバランス。シーンに馴染みやすく、失敗しにくい着こなし。…</p>
+            <div class="ids">top=3 / bottom=1 / shoes=2</div>
+          </div>
+        </div>
+        <div class="small muted" style="margin-top: 10px;">※ 上は短縮表示。完全な結果は download から見れます。</div>
+      </div>
+
       <div class="footer">
         <div><strong>Get started</strong>: 詳細は GitHub の README を参照 → <a href="https://github.com/rsasaki0109/vlm-outfit-refiner#readme">README</a></div>
         <div class="small">This project is an MVP for local use. Model output may be inaccurate; always sanity-check results.</div>

@@ -15,6 +15,7 @@ assets/pages-live-wardrobe.png
 assets/pages-live-public-photos.png
 assets/pages-local-example.png
 data/lp_demo.db
+data/lp_dogfood.db
 assets/pages-live-example.png
 assets/pages-live-example-realtext.png
 assets/pages-live-example-cards.png
@@ -23,3 +24,4 @@ assets/pages-local-newlp*.png
 assets/pages-local-wardrobe.png
 assets/pages-local-public-photos.png
 assets/pages-local-example-cards.png
+assets/pages-local-personas.png
