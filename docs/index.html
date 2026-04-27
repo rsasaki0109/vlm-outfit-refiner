@@ -169,6 +169,37 @@ python main.py recommend
         </div>
       </div>
 
+      <div class="section" id="example">
+        <h2>出力例（実データ / JSON）</h2>
+        <div class="small">
+          下は CC0 公開写真（上の “公開データの写真”）を `add` して、`recommend` を1回実行したときの実出力です。
+        </div>
+        <div class="codeLabel">
+          <div>docs/assets/sample_recommend.json</div>
+          <a href="./assets/sample_recommend.json">download</a>
+        </div>
+        <pre class="code">{
+  "ok": true,
+  "situation": "カフェ",
+  "temp_feel": "普通",
+  "user_style": "カジュアル",
+  "model": "qwen2.5vl:7b",
+  "proposals": [
+    {
+      "pattern_label": "safe",
+      "pattern_ja": "無難",
+      "item_ids": { "top": 1, "bottom": 2, "shoes": 3 },
+      "summary": "…",
+      "reason": "…",
+      "tips": "…"
+    },
+    { "pattern_label": "clean", "pattern_ja": "きれいめ", "item_ids": { "top": 1, "bottom": 2, "shoes": 3 }, "summary": "…", "reason": "…", "tips": "…" },
+    { "pattern_label": "bold", "pattern_ja": "攻め", "item_ids": { "top": 1, "bottom": 2, "shoes": 3 }, "summary": "…", "reason": "…", "tips": "…" }
+  ]
+}</pre>
+        <div class="small muted">※ ページ上は短縮表示。完全な JSON は download から見れます。</div>
+      </div>
+
       <div class="footer">
         <div><strong>Get started</strong>: 詳細は GitHub の README を参照 → <a href="https://github.com/rsasaki0109/vlm-outfit-refiner#readme">README</a></div>
         <div class="small">This project is an MVP for local use. Model output may be inaccurate; always sanity-check results.</div>
