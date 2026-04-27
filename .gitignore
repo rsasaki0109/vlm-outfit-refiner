@@ -4,3 +4,5 @@ __pycache__/
 .pytest_cache/
 data/*.db
 .streamlit/
+data/demo_wardrobe/
+data/uploads/
