@@ -189,6 +189,7 @@ python main.py recommend
 ```bash
 python main.py preset list
 python main.py dogfood --limit 5        # LLMなしで高速（既定）
+python main.py dogfood --summary --limit 5  # 比較向けサマリ（結果を軽量化）
 python main.py dogfood --llm --limit 2  # 理由文生成も回す（遅い）
 python main.py recommend --preset office_clean
 ```
