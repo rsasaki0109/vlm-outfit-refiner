@@ -218,6 +218,45 @@ a { color: inherit; }
 .gallery header { padding: 12px 14px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.12); font-weight: 700; color: rgba(255,255,255,0.86); }
 .gallery img { width: 100%; height: 280px; object-fit: contain; display: block; background: rgba(0,0,0,0.12); }
 
+.cards3 {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.look {
+  padding: 14px 14px 12px;
+}
+.lookTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.tag {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+}
+.tag .chip {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.86);
+}
+.tag.safe .chip { border-color: rgba(96,165,250,0.55); background: rgba(96,165,250,0.10); }
+.tag.clean .chip { border-color: rgba(52,211,153,0.60); background: rgba(52,211,153,0.10); }
+.tag.bold .chip { border-color: rgba(167,139,250,0.60); background: rgba(167,139,250,0.10); }
+.look p { margin: 0; }
+.look .summary { font-weight: 800; color: rgba(255,255,255,0.92); line-height: 1.5; }
+.look .reason { margin-top: 10px; color: rgba(255,255,255,0.76); line-height: 1.65; font-size: 13.5px; }
+.look .ids { margin-top: 10px; color: rgba(255,255,255,0.60); font-size: 12px; }
+
 .stack {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -248,6 +287,7 @@ a { color: inherit; }
   .grid { grid-template-columns: 1fr; }
   .two { grid-template-columns: 1fr; }
   .gallery { grid-template-columns: 1fr; }
+  .cards3 { grid-template-columns: 1fr; }
   .stack { grid-template-columns: 1fr; }
   .heroText h1 { font-size: 36px; }
 }
