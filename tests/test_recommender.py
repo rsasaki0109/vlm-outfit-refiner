@@ -94,3 +94,25 @@ def test_recommend_needs_all_categories(tmp_path: Path) -> None:
     with patch("recommender.narrate_outfit", side_effect=_fake_narrate):
         with pytest.raises(ValueError, match="Need tops|bottoms|shoes"):
             recommend_outfits(grouped, inp, ollama_model="stub", ollama_base="http://x")
+
+
+def test_recommend_avoid_triplet_keys(tmp_path: Path) -> None:
+    dp = tmp_path / "avoid.db"
+    db.init_db(dp)
+    # Two tops so we can avoid one triplet.
+    t1 = ClothesAttributes(category="tops", color="白", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    t2 = ClothesAttributes(category="tops", color="黒", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    b = ClothesAttributes(category="bottoms", color="紺", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    s = ClothesAttributes(category="shoes", color="黒", style=["カジュアル"], season=["春"], formality=2, fit="", notes="")
+    id_t1 = db.insert_item("/t1.png", "1" * 64, t1, t1.model_dump(), path=dp)
+    id_t2 = db.insert_item("/t2.png", "2" * 64, t2, t2.model_dump(), path=dp)
+    id_b = db.insert_item("/b.png", "3" * 64, b, b.model_dump(), path=dp)
+    id_s = db.insert_item("/s.png", "4" * 64, s, s.model_dump(), path=dp)
+
+    grouped = db.get_items_by_categories(["tops", "bottoms", "shoes"], dp)
+    inp = RecommendInput(situation="カフェ", temp_feel="普通", style="カジュアル")
+    avoid = {f"{id_t1}-{id_b}-{id_s}"}
+    with patch("recommender.narrate_outfit", side_effect=_fake_narrate):
+        out = recommend_outfits(grouped, inp, avoid_triplet_keys=avoid, use_llm=True, ollama_model="stub", ollama_base="http://x")
+    safe = next(p for p in out.proposals if p.pattern_label == "safe")
+    assert safe.item_ids["top"] == id_t2
