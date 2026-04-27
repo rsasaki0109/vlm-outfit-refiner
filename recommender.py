@@ -274,6 +274,7 @@ def recommend_outfits(
     *,
     ollama_model: str | None = None,
     ollama_base: str = DEFAULT_OLLAMA_URL,
+    use_llm: bool = True,
 ) -> RecommendOutput:
     tops = grouped.get("tops") or []
     bottoms = grouped.get("bottoms") or []
@@ -325,18 +326,34 @@ def recommend_outfits(
             lines.append(
                 f"- id {it['id']}: {it['category']} color={it['color']!s} formality={it['formality']} style=[{st}] notes={it.get('notes', '')!s}"
             )
-        uctx = json_dumps(
-            {
-                "situation": inp.situation,
-                "temp_feel": inp.temp_feel,
-                "user_style": inp.style,
-            }
-        )
-        outfit_ctx = "\n".join(lines)
-        text = narrate_outfit(uctx, outfit_ctx, ja, desc, model=ollama_model, base_url=ollama_base)
-        summary = str(text.get("summary", "おすすめのコーディネート"))
-        reason = str(text.get("reason", "・合わせやすいバランス\n・シチュエーションに馴染みます"))
-        tips = str(text.get("tips", ""))
+        if use_llm:
+            uctx = json_dumps(
+                {
+                    "situation": inp.situation,
+                    "temp_feel": inp.temp_feel,
+                    "user_style": inp.style,
+                }
+            )
+            outfit_ctx = "\n".join(lines)
+            text = narrate_outfit(
+                uctx, outfit_ctx, ja, desc, model=ollama_model, base_url=ollama_base
+            )
+            summary = str(text.get("summary", "おすすめのコーディネート"))
+            reason = str(
+                text.get("reason", "・合わせやすいバランス\n・シチュエーションに馴染みます")
+            )
+            tips = str(text.get("tips", ""))
+        else:
+            # Deterministic, fast fallback for dogfooding without Ollama.
+            summary = f"{inp.situation}向けの{ja}コーデ（{inp.temp_feel}）"
+            reason = "\n".join(
+                [
+                    f"・{desc}",
+                    "・トップス/ボトムス/靴の基本3点で組みやすい",
+                    f"・スタイル: {inp.style}",
+                ]
+            )
+            tips = "色や小物で微調整して自分寄りに寄せるのがおすすめ"
         oids: dict[str, int] = {
             "top": int(trip.top["id"]),
             "bottom": int(trip.bottom["id"]),
