@@ -1,0 +1,51 @@
+name: Bug report
+description: 不具合・想定外の動作の報告（日本語OK）
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        再現手順と環境が分かると修正が早くなります。
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 何が起きたか
+      description: 期待した動作と、実際の動作を書いてください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: e.g. Ubuntu 24.04 / macOS 15 / Windows 11
+
+  - type: input
+    id: python
+    attributes:
+      label: Python
+      placeholder: e.g. 3.12.3
+
+  - type: input
+    id: ollama
+    attributes:
+      label: Ollama / モデル（該当する場合）
+      placeholder: e.g. qwen2.5vl:7b
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・エラーメッセージ（あれば）
+      render: shell

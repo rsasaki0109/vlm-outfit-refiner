@@ -62,8 +62,20 @@ python main.py recommend
         </div>
 
         <div class="card preview">
-          <header>実際の画面</header>
-          <img src="./assets/banner.png" alt="banner" />
+          <header>1分 UI デモ（Add → Edit → Recommend）</header>
+          <img
+            class="heroGif"
+            src="./assets/demo-ui-flow.gif"
+            width="1200"
+            height="760"
+            loading="lazy"
+            alt="Streamlit: デモ3点登録、属性の手修正、3案の推薦"
+          />
+          <div class="small heroGifNote">
+            本番利用では画像を <strong>VLM 抽出</strong>して登録。このGIFは
+            <code>demo=1</code>（3点一括）と <code>no_llm=1</code>（提案文のローカル化）で<strong>画面収録専用</strong>。静止画は
+            <a href="#screens">下のスクショ</a> へ。
+          </div>
         </div>
       </div>
 

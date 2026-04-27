@@ -10,7 +10,7 @@ import streamlit as st
 
 import db
 from image_tools import PortraitOptions, make_profile_portrait
-from models.schema import RecommendInput
+from models.schema import ClothesAttributes, RecommendInput
 from recommender import recommend_outfits
 from vlm import DEFAULT_OLLAMA_URL, DEFAULT_VISION_MODEL, extract_clothing_attributes
 
@@ -39,16 +39,78 @@ def _json(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2)
 
 
+def _truthy(s: str) -> bool:
+    t = s.strip().lower()
+    return t in ("1", "true", "yes", "on", "y")
+
+
+def _insert_sample_wardrobe_3(dpath: Path) -> int:
+    """Inserts 3 items from repo demo PNGs (no Ollama). For LP / GIF / offline demos."""
+    items: list[tuple[Path, ClothesAttributes]] = [
+        (
+            ROOT / "docs/assets/wardrobe-demo/tops_white_tee.png",
+            ClothesAttributes(
+                category="tops",
+                color="白",
+                style=["カジュアル"],
+                season=["春", "夏"],
+                formality=2,
+                fit="レギュラー",
+                notes="(demo) wardrobe sample",
+            ),
+        ),
+        (
+            ROOT / "docs/assets/wardrobe-demo/bottoms_navy_slacks.png",
+            ClothesAttributes(
+                category="bottoms",
+                color="ネイビー",
+                style=["きれいめ", "カジュアル"],
+                season=["春", "秋", "冬"],
+                formality=3,
+                fit="スリム",
+                notes="(demo) wardrobe sample",
+            ),
+        ),
+        (
+            ROOT / "docs/assets/wardrobe-demo/shoes_black_leather.png",
+            ClothesAttributes(
+                category="shoes",
+                color="黒",
+                style=["きれいめ"],
+                season=["通年"],
+                formality=3,
+                fit="",
+                notes="(demo) wardrobe sample",
+            ),
+        ),
+    ]
+    n = 0
+    for p, attrs in items:
+        if not p.is_file():
+            raise FileNotFoundError(f"demo image missing: {p}")
+        data = p.read_bytes()
+        h = _sha256_bytes(data)
+        if db.find_by_hash(h, dpath) is not None:
+            continue
+        raw = attrs.model_dump()
+        db.insert_item(str(p.resolve()), h, attrs, raw, path=dpath)
+        n += 1
+    return n
+
+
 def main() -> None:
     st.set_page_config(page_title="vlm-outfit-refiner", layout="wide")
     st.title("vlm-outfit-refiner (local MVP)")
 
     qp = st.query_params
+
     qp_page = str(qp.get("page", "")).strip().lower()
     qp_id_raw = str(qp.get("id", "")).strip()
     qp_db = str(qp.get("db", "")).strip()
     qp_ollama = str(qp.get("ollama", "")).strip()
     qp_model = str(qp.get("model", "")).strip()
+    demo_mode = _truthy(str(qp.get("demo", "")))
+    no_llm = _truthy(str(qp.get("no_llm", "")))
 
     page_map = {
         "add": "Add",
@@ -88,6 +150,16 @@ def main() -> None:
 
     if page == "Add":
         st.subheader("Add clothing image")
+        if demo_mode:
+            st.caption(
+                "LP / GIF: VLM なしで3点（tops/bottoms/shoes）を一括登録。通常利用では「画像を VLM 抽出」フロー。"
+            )
+            if st.button("Load 3 sample items (wardrobe, no Ollama)"):
+                try:
+                    n = _insert_sample_wardrobe_3(dpath)
+                    st.success(f"loaded {n} new item(s) (duplicates skipped).")
+                except Exception as e:  # noqa: BLE001
+                    st.error(str(e))
         ups = st.file_uploader(
             "Upload images",
             type=["png", "jpg", "jpeg", "webp"],
@@ -208,17 +280,25 @@ def main() -> None:
 
     elif page == "Recommend":
         st.subheader("Recommend (3 patterns)")
+        if no_llm:
+            st.caption("no_llm=1: 提案文はローカル補完（Ollama 非使用）。")
         situation = st.text_input("situation", value="カフェ")
         temp = st.selectbox("temp_feel", ["普通", "暑い", "寒い"], index=0)
         pref_style = st.text_input("style", value="カジュアル")
-        if st.button("Recommend"):
+        if st.button("Run 3-pattern recommend"):
             try:
                 grouped = db.get_items_by_categories(
                     ["tops", "bottoms", "shoes", "outer", "bag", "accessory"],
                     dpath,
                 )
                 inp = RecommendInput(situation=situation, temp_feel=temp, style=pref_style)
-                out = recommend_outfits(grouped, inp, ollama_model=model, ollama_base=ollama)
+                out = recommend_outfits(
+                    grouped,
+                    inp,
+                    ollama_model=model,
+                    ollama_base=ollama,
+                    use_llm=not no_llm,
+                )
                 payload = json.loads(out.model_dump_json())
                 st.code(_json({"ok": True, **payload}), language="json")
             except Exception as e:  # noqa: BLE001

@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: vlm-outfit-refiner
+message: >-
+  If you use this software, please cite the repository.
+type: software
+authors:
+  - name: vlm-outfit-refiner contributors
+repository-code: 'https://github.com/rsasaki0109/vlm-outfit-refiner'
+license: MIT
+abstract: >-
+  Local-first wardrobe assistant using Ollama Vision for clothing attributes and
+  SQLite-backed outfit recommendations (CLI + Streamlit).
