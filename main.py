@@ -32,43 +32,99 @@ def _file_sha256(p: Path) -> str:
     return h.hexdigest()
 
 
-def _cmd_add(args: argparse.Namespace) -> int:
-    p = Path(args.image_path).expanduser().resolve()
+def _add_one_image(
+    image_path: Path,
+    *,
+    dpath: Path | None,
+    model: str | None,
+    ollama: str | None,
+) -> dict:
+    p = image_path.expanduser().resolve()
     if not p.is_file():
-        print(json.dumps({"error": f"file not found: {p}"}, ensure_ascii=False), file=sys.stderr)
-        return 2
+        return {"ok": False, "error": f"file not found: {p}", "image_path": str(p)}
     fhash = _file_sha256(p)
-    dpath: Path | None = Path(args.db) if args.db else None
-    if dpath:
-        dpath = dpath.expanduser().resolve()
     db.init_db(dpath)
     existing = db.find_by_hash(fhash, dpath)
     if existing is not None:
-        out = {
+        return {
             "ok": True,
             "deduplicated": True,
             "message": "同じ内容の服は既に登録済みです。",
             "existing_id": existing,
             "file_hash": fhash,
+            "image_path": str(p),
         }
-        print(json.dumps(out, ensure_ascii=False, indent=2))
-        return 0
-    try:
-        attrs = extract_clothing_attributes(
-            p, model=args.model, base_url=args.ollama or DEFAULT_OLLAMA_URL
-        )
-    except Exception as e:  # noqa: BLE001 — surface to CLI user
-        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
-        return 1
+    attrs = extract_clothing_attributes(p, model=model, base_url=ollama or DEFAULT_OLLAMA_URL)
     row_dict = attrs.model_dump()
     iid = db.insert_item(str(p), fhash, attrs, row_dict, path=dpath)
-    out = {
+    return {
         "ok": True,
         "deduplicated": False,
         "id": iid,
         "file_hash": fhash,
         "image_path": str(p),
         "attributes": row_dict,
+    }
+
+
+def _cmd_add(args: argparse.Namespace) -> int:
+    dpath: Path | None = Path(args.db) if args.db else None
+    if dpath:
+        dpath = dpath.expanduser().resolve()
+    try:
+        out = _add_one_image(
+            Path(args.image_path),
+            dpath=dpath,
+            model=args.model,
+            ollama=args.ollama,
+        )
+    except Exception as e:  # noqa: BLE001 — surface to CLI user
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0 if out.get("ok") else 2
+
+
+def _cmd_add_batch(args: argparse.Namespace) -> int:
+    dpath: Path | None = Path(args.db) if args.db else None
+    if dpath:
+        dpath = dpath.expanduser().resolve()
+    root = Path(args.dir).expanduser().resolve()
+    if not root.exists():
+        print(json.dumps({"ok": False, "error": f"dir not found: {root}"}, ensure_ascii=False), file=sys.stderr)
+        return 2
+
+    exts = {".jpg", ".jpeg", ".png", ".webp"}
+    paths = list(root.rglob("*")) if args.recursive else list(root.glob("*"))
+    imgs = [p for p in paths if p.is_file() and p.suffix.lower() in exts]
+    imgs.sort()
+    if args.limit and args.limit > 0:
+        imgs = imgs[: int(args.limit)]
+
+    results: list[dict] = []
+    ok_n = dedup_n = fail_n = 0
+    for p in imgs:
+        try:
+            r = _add_one_image(p, dpath=dpath, model=args.model, ollama=args.ollama)
+        except Exception as e:  # noqa: BLE001
+            r = {"ok": False, "error": str(e), "image_path": str(p)}
+        results.append(r)
+        if r.get("ok"):
+            ok_n += 1
+            if r.get("deduplicated"):
+                dedup_n += 1
+        else:
+            fail_n += 1
+
+    out = {
+        "ok": True,
+        "dir": str(root),
+        "recursive": bool(args.recursive),
+        "scanned": len(imgs),
+        "added_or_deduped": ok_n,
+        "deduplicated": dedup_n,
+        "failed": fail_n,
+        "results": results if args.verbose else [],
     }
     print(json.dumps(out, ensure_ascii=False, indent=2))
     return 0
@@ -294,6 +350,13 @@ def _build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("add", help="服画像を登録し、VLMで属性抽出")
     a.add_argument("image_path", type=str, help="画像パス")
     a.set_defaults(func=_cmd_add)
+
+    ab = sub.add_parser("add-batch", help="フォルダ内の画像をまとめて登録（dogfooding向け）")
+    ab.add_argument("dir", type=str, help="画像が入ったディレクトリ")
+    ab.add_argument("--recursive", action="store_true", help="サブディレクトリも対象")
+    ab.add_argument("--limit", type=int, default=0, help="最大件数（0=無制限）")
+    ab.add_argument("--verbose", action="store_true", help="results を出力に含める")
+    ab.set_defaults(func=_cmd_add_batch)
 
     r = sub.add_parser("recommend", help="3パターン（無難/きれいめ/攻め）を提案")
     r.add_argument(
