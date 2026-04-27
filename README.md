@@ -1,5 +1,7 @@
 # vlm-outfit-refiner
 
+![vlm-outfit-refiner banner](assets/banner.png)
+
 手持ちの服の写真をローカル VLM で属性化し、シチュエーションに合わせたコーデ案を**無難 / きれいめ / 攻め**の 3 通り、理由付きで返す CLI。外部クラウド API は使いません（Ollama 前提）。
 
 ---
