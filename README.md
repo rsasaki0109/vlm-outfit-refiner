@@ -20,6 +20,24 @@
 
 ![ブランド用バナー（静止画）](assets/banner.png)
 
+## 服の写真の例（実写真・CC0）
+
+`add` に渡すような**実際の服の写真**のイメージです（LP と同じ Wikimedia CC0、720px 版）。
+
+| tops | bottoms | shoes |
+|:---:|:---:|:---:|
+| ![tops (CC0)](docs/assets/public/optimized/tops_tshirt_cc0_720.jpg) | ![bottoms (CC0)](docs/assets/public/optimized/bottoms_skinny_jeans_cc0_720.jpg) | ![shoes (CC0)](docs/assets/public/optimized/shoes_sports_shoes_cc0_720.jpg) |
+
+出典・作者・ライセンスの全文は [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md)。
+
+### デモ用の見本画像（リポジトリ内）
+
+`?demo=1` の一括登録やユニットテストで使う、**軽い見本素材**（実写ではありません）。
+
+| tops | bottoms | shoes |
+|:---:|:---:|:---:|
+| ![demo tops](docs/assets/wardrobe-demo/tops_white_tee.png) | ![demo bottoms](docs/assets/wardrobe-demo/bottoms_navy_slacks.png) | ![demo shoes](docs/assets/wardrobe-demo/shoes_black_leather.png) |
+
 **ほかのセクション:** [要点](#要点) · [クイックスタート](#クイックスタート) · [トラブルシューティング](#トラブルシューティング)
 
 ---
