@@ -1,8 +1,26 @@
 # vlm-outfit-refiner
 
-![vlm-outfit-refiner banner](assets/banner.png)
+[![CI](https://github.com/rsasaki0109/vlm-outfit-refiner/actions/workflows/ci.yml/badge.svg)](https://github.com/rsasaki0109/vlm-outfit-refiner/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Repo stars](https://img.shields.io/github/stars/rsasaki0109/vlm-outfit-refiner?style=social)](https://github.com/rsasaki0109/vlm-outfit-refiner)
 
-手持ちの服の写真をローカル VLM で属性化し、シチュエーションに合わせたコーデ案を**無難 / きれいめ / 攻め**の 3 通り、理由付きで返す CLI。外部クラウド API は使いません（Ollama 前提）。
+**English:** Local-first wardrobe tool: turn clothing photos into structured attributes with **Ollama Vision**, persist in **SQLite**, and get **3 outfit proposals** (safe / clean / bold) with reasons — **no cloud APIs**.
+
+**日本語:** 手持ちの服の写真をローカル VLM で属性化し、シチュエーションに合わせたコーデ案を**無難 / きれいめ / 攻め**の 3 通り、理由付きで返す CLI（＋ Streamlit）。外部クラウド API は使いません（Ollama 前提）。
+
+|       | Links |
+|-------|-------|
+| LP | [**GitHub Pages**（デモ・FAQ・公開画像の例）](https://rsasaki0109.github.io/vlm-outfit-refiner/) |
+| 貢献 | [CONTRIBUTING.md](CONTRIBUTING.md) · [Issues](https://github.com/rsasaki0109/vlm-outfit-refiner/issues) |
+
+**画面デモ（Streamlit · `demo=1` / `no_llm=1` で収録）**
+
+![UI demo: Add → Edit → Recommend](docs/assets/demo-ui-flow.gif)
+
+![ブランド用バナー（静止画）](assets/banner.png)
+
+**ほかのセクション:** [要点](#要点) · [クイックスタート](#クイックスタート) · [トラブルシューティング](#トラブルシューティング)
 
 ---
 
@@ -121,6 +139,23 @@ streamlit run app.py
 
 UI から `add` / `list` / `edit` / `reclassify` / `recommend` を一通り触れます（内部は同じモジュールを呼び出すだけの薄いUI）。
 
+**URL パラメータ（任意）**
+
+- `?demo=1` — Add 画面に「デモ3点（VLMなし）」ボタンを出す（LP / 画面録画向け）
+- `?no_llm=1` — `recommend` の説明文をローカル補完のみにする（Ollama 不要で高速）
+
+**GitHub Pages 用のデモ GIF を再生成する（任意）**
+
+`playwright` / `streamlit` / システムの `ffmpeg` が必要です。仮想環境を有効化してから実行してください。
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+playwright install chromium
+python scripts/capture_demo_gif.py
+# → docs/assets/demo-ui-flow.gif
+```
+
 ---
 
 ## 登録される属性（スキーマの目安）
@@ -210,6 +245,15 @@ python main.py recommend --preset office_clean
 5. **移動・バックアップ** — 画像の実体を `data/` 下にコピーしてパス壊れを防ぐ、DB の JSON エクスポート
 
 **実装済み**: `edit`（手修正）、`reclassify`（VLM で取り直し）、`pytest` 用の DB / レコメンドの基本テスト（`narrate_outfit` はモック）。
+
+---
+
+## Star / 発見してもらうために
+
+役に立ったら **[GitHub で Star](https://github.com/rsasaki0109/vlm-outfit-refiner)** を付けると、同じ課題を持つ人の検索結果に届きやすくなります。リポジトリの **About → Topics** に `ollama`, `vision-language-model`, `local-ai`, `sqlite`, `streamlit` などを足すのも有効です（候補は [CONTRIBUTING.md](CONTRIBUTING.md) に記載）。
+
+**About の説明文の例（コピペ用・英語）:**  
+`Local wardrobe assistant: Ollama Vision + SQLite → 3 outfit ideas (safe/clean/bold). CLI & Streamlit. No cloud APIs.`
 
 ---
 

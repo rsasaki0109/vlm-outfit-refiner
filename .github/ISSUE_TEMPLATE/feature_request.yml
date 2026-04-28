@@ -1,0 +1,30 @@
+name: Feature request
+description: 機能追加・アイデア（日本語OK）
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解決したいこと / 背景
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案内容
+      description: できれば「ユーザー視点」で1〜3文で。
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 該当しそうな範囲（任意）
+      options:
+        - label: CLI (main.py)
+        - label: Streamlit (app.py)
+        - label: レコメンドロジック (recommender.py)
+        - label: VLM 連携 (vlm.py / prompts)
+        - label: ドキュメント / LP
