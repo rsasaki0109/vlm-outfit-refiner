@@ -1,2 +1,2 @@
-pydantic>=2.5.0
+pydantic>=2.13.3
 Pillow>=10.0.0
